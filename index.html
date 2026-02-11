@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZERO1NE PLAYGROUND 실시간 일정</title>
+    <style>
+        @font-face {
+            font-family: 'Zero1neFont';
+            src: url('zer01neotaltsb.ttf') format('truetype');
+            font-weight: normal; font-style: normal;
+        }
+
+        :root { --point-blue: #1a3a8a; }
+
+        body {
+            font-family: 'Zero1neFont', sans-serif;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            background-color: #000; 
+            height: 100vh; overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            height: 100vh; 
+            aspect-ratio: 9 / 16;
+            background-color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .full-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('bg.png');
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+        }
+
+        .content-overlay {
+            position: relative;
+            z-index: 2; height: 100%; display: flex; flex-direction: column;
+        }
+
+        header { padding: 25px 30px 10px; text-align: center; position: relative; }
+        
+        .qr-area { position: absolute; top: 15px; left: 15px; text-align: center; }
+        .qr-image { 
+            width: 77px; height: 77px; 
+            object-fit: contain; background: white; 
+            padding: 5px; border-radius: 4px; 
+        }
+        .qr-text { 
+            font-size: 22px !important; font-weight: bold; 
+            margin-top: -2px; letter-spacing: -1px;
+        }
+
+        h1 { margin: 0; padding-top: 10px; font-size: 65px !important; letter-spacing: -2px; line-height: 1; }
+        
+        .sub-header-container {
+            position: relative;
+            display: flex;
+            justify-content: center; 
+            align-items: center;
+            margin-top: 5px;
+            min-height: 30px;
+        }
+
+        .sub-title { font-size: 25px; text-transform: uppercase; color: #333; }
+
+        .current-time { 
+            position: absolute;
+            right: 0;
+            font-size: 25px; 
+            color: #000; 
+            font-weight: bold; 
+        }
+
+        .schedule-table { 
+            flex: 1; 
+            margin: 20px 20px 0;
+            position: relative;
+        }
+        
+        .schedule-table::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 32%; 
+            width: 4px; height: 100%;
+            background-color: #000;
+            z-index: 3;
+        }
+
+        .row { display: flex; min-height: 120px; margin-bottom: 25px; position: relative; z-index: 4; }
+
+        .location {
+            width: 32%; 
+            display: flex; flex-direction: column; justify-content: center; text-align: center;
+        }
+        .location .ko { font-size: 50px !important; line-height: 1; font-weight: bold; margin-bottom: 6px; }
+        .location .en { font-size: 22px !important; line-height: 1; color: #444; font-weight: bold; }
+
+        .info { 
+            width: 68%; 
+            padding-left: 20px; /* 배경색 박스를 고려해 패딩 조절 */
+            display: flex; flex-direction: column; justify-content: center; 
+        }
+
+        .event-item { 
+            margin-bottom: 10px; 
+            padding: 10px 15px; 
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .event-item:last-child { margin-bottom: 0; }
+
+        /* [추가] 진행 중인 예약 강조 스타일 */
+        .event-item.ongoing {
+            background-color: rgba(26, 58, 138, 0.1); /* 제로원 블루 연하게 */
+            border-left: 8px solid var(--point-blue);
+        }
+
+        .team-name { 
+            font-size: 50px !important; color: #000; 
+            font-weight: bold; line-height: 1.1; 
+            margin-bottom: 4px; display: block; 
+        }
+        .manager-details { 
+            font-size: 25px !important; color: #333; 
+            font-weight: bold; line-height: 1; display: block; 
+        }
+
+        footer { padding: 0 0px 40px; text-align: center; background: none; }
+        .footer-divider { width: 100%; height: 4px; background-color: #000; margin-bottom: 30px; }
+
+        .welcome { font-size: 58px !important; font-weight: 900 !important; margin-bottom: -2px; letter-spacing: -1px; }
+        .brand { color: var(--point-blue); line-height: 0.95; margin: 0 0 20px; font-weight: bold; }
+        .brand .z-large { font-size: 75px !important; display: block; margin-bottom: 2px; }
+        .brand .p-small { font-size: 75px !important; display: block; }
+
+        .footer-info { font-size: 21px; line-height: 1.4; font-weight: bold; color: #000; margin-bottom: 8px; }
+        .footer-notice { font-size: 18px; font-weight: bold; color: #444; padding: 0 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="full-bg"></div>
+    <div class="content-overlay">
+        <header>
+            <div class="qr-area">
+                <img src="qr.png" alt="QR" class="qr-image">
+                <div class="qr-text">대관 신청</div>
+            </div>
+            <h1>오늘의 대관 일정</h1>
+            <div class="sub-header-container">
+                <div class="sub-title">today's schedule</div>
+                <div id="clock" class="current-time">00:00:00</div>
+            </div>
+        </header>
+
+        <section class="schedule-table" id="schedule-body">
+        </section>
+
+        <footer>
+            <div class="footer-divider"></div>
+            <div class="welcome">WELCOME TO</div>
+            <div class="brand">
+                <span class="z-large">ZERO1NE</span>
+                <span class="p-small">PLAYGROUND</span>
+            </div>
+            <div class="footer-info">
+                공간 내 문의사항은 ADMIN 오피스로 문의주세요<br>
+                (For any other inquiries, please contact the admin office)
+            </div>
+            <div class="footer-notice">
+                자동화 코드로 제작된 페이지입니다, 일정표에 이상이 있다면 ADMIN에 알려주세요.
+            </div>
+        </footer>
+    </div>
+</div>
+
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyeGlBil46MwNn8U91f6hmmYwRgFzx_G1RfaC9F1xJmkDIGqlWy7F95K1qBzJDf4Navqw/exec";
+    
+    const locations = [
+        { ko: "스튜디오", en: "STUDIO", keyword: "스튜디오" },
+        { ko: "미팅룸 1", en: "MEETING ROOM 1", keyword: "미팅룸1" },
+        { ko: "미팅룸 2", en: "MEETING ROOM 2", keyword: "미팅룸2" },
+        { ko: "미팅룸 3", en: "MEETING ROOM 3", keyword: "미팅룸3" },
+        { ko: "미팅룸 4", en: "MEETING ROOM 4", keyword: "미팅룸4" }
+    ];
+
+    function updateClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+    }
+
+    // [추가] 진행 중 여부 확인 로직
+    function isOngoing(startTimeStr, endTimeStr) {
+        const now = new Date();
+        const currentTime = now.getHours() * 100 + now.getMinutes();
+        
+        const start = parseInt(startTimeStr.replace(':', ''));
+        const end = parseInt(endTimeStr.replace(':', ''));
+        
+        return currentTime >= start && currentTime < end;
+    }
+
+    async function fetchSchedule() {
+        try {
+            const response = await fetch(GAS_URL);
+            const data = await response.json();
+            renderSchedule(data);
+        } catch (error) { console.error("데이터 로드 실패:", error); }
+    }
+
+    function renderSchedule(events) {
+        const container = document.getElementById('schedule-body');
+        container.innerHTML = '';
+
+        locations.forEach(loc => {
+            const matchedEvents = events.filter(e => e.title.replace(/\s+/g, '').includes(loc.keyword));
+            const row = document.createElement('div');
+            row.className = 'row';
+            
+            let infoHtml = '';
+            if (matchedEvents.length > 0) {
+                infoHtml = matchedEvents.map(event => {
+                    let cleanTitle = event.title.includes(']') ? event.title.split(']')[1] : event.title;
+                    let teamName = "예약됨", managerName = "";
+                    if (cleanTitle.includes('_')) {
+                        const parts = cleanTitle.split('_');
+                        teamName = parts[0].trim();
+                        managerName = parts[1].trim();
+                    } else { teamName = cleanTitle.trim(); }
+
+                    // 현재 시간과 비교하여 클래스 부여
+                    const ongoingClass = isOngoing(event.start, event.end) ? 'ongoing' : '';
+
+                    return `<div class="event-item ${ongoingClass}">
+                                <span class="team-name">${teamName}</span>
+                                <span class="manager-details">${managerName} [${event.start}-${event.end}]</span>
+                            </div>`;
+                }).join('');
+            }
+
+            row.innerHTML = `
+                <div class="location">
+                    <span class="ko">${loc.ko}</span>
+                    <span class="en">${loc.en}</span>
+                </div>
+                <div class="info">${infoHtml}</div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+    fetchSchedule(); 
+    setInterval(fetchSchedule, 300000); 
+</script>
+
+</body>
+</html>
