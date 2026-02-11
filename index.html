@@ -105,7 +105,7 @@
 
         .info { 
             width: 68%; 
-            padding-left: 20px; /* 배경색 박스를 고려해 패딩 조절 */
+            padding-left: 10px; 
             display: flex; flex-direction: column; justify-content: center; 
         }
 
@@ -113,14 +113,20 @@
             margin-bottom: 10px; 
             padding: 10px 15px; 
             border-radius: 8px;
-            transition: all 0.3s ease;
+            box-sizing: border-box;
+            position: relative;
         }
         .event-item:last-child { margin-bottom: 0; }
 
-        /* [추가] 진행 중인 예약 강조 스타일 */
+        /* [수정] 진행 중인 예약 강조 스타일: 오른쪽 줄 + 5초 깜빡임 애니메이션 */
         .event-item.ongoing {
-            background-color: rgba(26, 58, 138, 0.1); /* 제로원 블루 연하게 */
-            border-left: 8px solid var(--point-blue);
+            border-right: 12px solid var(--point-blue); /* 오른쪽 파란 줄 */
+            animation: blinkBg 5s infinite; /* 5초 주기 깜빡임 */
+        }
+
+        @keyframes blinkBg {
+            0%, 100% { background-color: rgba(26, 58, 138, 0.2); }
+            50% { background-color: rgba(26, 58, 138, 0.02); }
         }
 
         .team-name { 
@@ -202,14 +208,11 @@
         document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
     }
 
-    // [추가] 진행 중 여부 확인 로직
     function isOngoing(startTimeStr, endTimeStr) {
         const now = new Date();
         const currentTime = now.getHours() * 100 + now.getMinutes();
-        
         const start = parseInt(startTimeStr.replace(':', ''));
         const end = parseInt(endTimeStr.replace(':', ''));
-        
         return currentTime >= start && currentTime < end;
     }
 
@@ -241,7 +244,6 @@
                         managerName = parts[1].trim();
                     } else { teamName = cleanTitle.trim(); }
 
-                    // 현재 시간과 비교하여 클래스 부여
                     const ongoingClass = isOngoing(event.start, event.end) ? 'ongoing' : '';
 
                     return `<div class="event-item ${ongoingClass}">
